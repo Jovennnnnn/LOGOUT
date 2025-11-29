@@ -24,8 +24,9 @@
   box-shadow: var(--shadow-hover) !important;
 }
 
-.notification-item:hover,
-.sidebar-item:hover {
+/* Keep notification hover transform here; sidebar hover is defined in page-specific CSS
+   (removing the global !important to avoid conflicts with page-level `.sidebar-item.active` rules) */
+.notification-item:hover {
   transform: translateX(4px) !important;
 }
 

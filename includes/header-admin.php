@@ -152,20 +152,11 @@
         const notifBtn = e.target.closest && e.target.closest('#notificationsBtn');
         const logoutBtn = e.target.closest && e.target.closest('#logoutBtn');
 
-<<<<<<< HEAD
-        // If the logout element is our new action button, skip ALL legacy handlers
-        // and let js/logout.js handle it exclusively
+        // If the logout element is our new action button, allow the centralized
+        // logout handler to run and avoid interfering with its event listeners.
+        // Simply return here so the `.js-logout-action` handler can handle the click.
         if (logoutBtn && logoutBtn.classList && logoutBtn.classList.contains('js-logout-action')) {
-          return; // allow only the .js-logout-action handler from js/logout.js to run
-=======
-        // If the logout element is our new action button, prevent legacy handlers
-        // from running (they may perform unconditional logout). We stop immediate
-        // propagation so only the `.js-logout-action` handler controls logout.
-        if (logoutBtn && logoutBtn.classList && logoutBtn.classList.contains('js-logout-action')) {
-          try { e.preventDefault(); } catch(_) {}
-          try { e.stopImmediatePropagation(); } catch(_) {}
-          return; // allow the .js-logout-action handler to run instead
->>>>>>> 5288bc0fdf6561e476d691bb1b43bf5a1a95d3e2
+          return; // allow the .js-logout-action handler to run
         }
 
         if (notifBtn) {

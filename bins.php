@@ -748,9 +748,6 @@ if ($bins_result) {
       <a href="notifications.php" class="sidebar-item">
         <i class="fa-solid fa-bell"></i><span>Notifications</span>
       </a>
-      <a href="#" class="sidebar-item">
-        <i class="fa-solid fa-gear"></i><span>Settings</span>
-      </a>
       <a href="profile.php" class="sidebar-item">
         <i class="fa-solid fa-user"></i><span>My Profile</span>
       </a>
