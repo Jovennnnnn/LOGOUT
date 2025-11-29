@@ -9,11 +9,8 @@ if (isAdmin()) {
     exit;
 }
 
-// If logged in as janitor, redirect to janitor dashboard (they shouldn't be here)
-if (isJanitor()) {
-    header('Location: janitor-dashboard.php');
-    exit;
-}
+// If logged in as janitor, let them stay here (they can see admin login form and choose to log out)
+// Do NOT redirect to janitor dashboard - that prevents viewing the admin login form
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -184,7 +181,7 @@ if (isJanitor()) {
               document.cookie = `email=${encodeURIComponent(emailInput.value)}; max-age=${30 * 24 * 60 * 60}; path=/`;
             }
             showNotification(data.message || "Welcome!", "success");
-            setTimeout(() => { window.location.href = data.redirect || "admin-dashboard.php"; }, 1500);
+            window.location.href = data.redirect || "admin-dashboard.php";
           } else {
             showNotification(data.message || "Login failed", "error");
           }
@@ -259,21 +256,7 @@ if (isJanitor()) {
   }
 
   document.addEventListener('DOMContentLoaded', initFooterText);
-
-  // ===============================
-// PASSWORD TOGGLE FUNCTION
-// ===============================
-const togglePassword = document.getElementById("togglePassword");
-const passwordInput = document.getElementById("password");
-
-togglePassword.addEventListener("click", function () {
-  const type = passwordInput.getAttribute("type") === "password" ? "text" : "password";
-  passwordInput.setAttribute("type", type);
-
-  // Palit icon eye <-> eye-slash
-  this.querySelector("i").classList.toggle("fa-eye");
-  this.querySelector("i").classList.toggle("fa-eye-slash");
-});
+  // Note: password toggle handler is added inside DOMContentLoaded above.
   </script>
   <script src="js/scroll-progress.js"></script>
   <?php include 'includes/info-modals.php'; ?>

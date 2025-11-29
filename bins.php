@@ -1507,8 +1507,7 @@ if ($bins_result) {
           }
       }
     </script>
-  <!-- Janitor dashboard JS for header/footer modal helpers -->
-  <script src="js/janitor-dashboard.js"></script>
+  <!-- Logout is handled by js/logout.js via header-admin.php (DO NOT include janitor-dashboard.js) -->
   <!-- JS fallback: ensure dropdowns inside tables are not clipped by ancestor overflow -->
   <script>
       (function(){
@@ -1622,8 +1621,8 @@ if ($bins_result) {
         try {
           const notifBtn = document.getElementById('notificationsBtn');
           if (notifBtn) notifBtn.addEventListener('click', function(e){ e.preventDefault(); if (typeof openNotificationsModal === 'function') openNotificationsModal(e); else if (typeof showModalById === 'function') showModalById('notificationsModal'); });
-          const logoutBtn = document.getElementById('logoutBtn');
-          if (logoutBtn) logoutBtn.addEventListener('click', function(e){ e.preventDefault(); if (typeof showLogoutModal === 'function') showLogoutModal(e); else if (typeof showModalById === 'function') showModalById('logoutModal'); else window.location.href='logout.php'; });
+          // Logout is handled by `js/logout.js` via header-admin.php (no inline handler)
+          // Removed inline fallback that redirected immediately to logout.php
         } catch(err) { console.warn('Header fallback handlers error', err); }
       });
     </script>

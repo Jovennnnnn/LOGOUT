@@ -788,10 +788,9 @@ try {
       });
     })();
 </script>
-<!-- Janitor dashboard JS for header/footer modal helpers -->
-<script src="js/janitor-dashboard.js"></script>
+<!-- Logout is handled by js/logout.js via header-admin.php (DO NOT include janitor-dashboard.js) -->
 
-<!-- Fallback wiring: ensure notification bell and logout open the janitor modals and do not navigate -->
+<!-- Fallback wiring: ensure notification bell works correctly -->
 <script>
   document.addEventListener('DOMContentLoaded', function() {
     try {
@@ -804,15 +803,8 @@ try {
         });
       }
 
-      const logoutBtn = document.getElementById('logoutBtn');
-      if (logoutBtn) {
-        logoutBtn.addEventListener('click', function(e) {
-          e.preventDefault();
-          if (typeof showLogoutModal === 'function') showLogoutModal(e);
-          else if (typeof showModalById === 'function') showModalById('logoutModal');
-          else window.location.href = 'logout.php';
-        });
-      }
+      // Logout is handled by `js/logout.js` via header-admin.php (no inline handler)
+      // Removed inline fallback that redirected immediately to logout.php
     } catch (err) {
       console.warn('Header fallback handlers error', err);
     }

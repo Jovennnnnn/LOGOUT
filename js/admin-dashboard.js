@@ -1147,14 +1147,39 @@ window.saveBinEdit = () => {
 function deleteBin(binId) {
   if (!confirm(`Are you sure you want to delete bin ${binId}?`)) return
 
-  const index = bins.findIndex((b) => b.id === binId)
-  if (index > -1) {
-    bins.splice(index, 1)
-    loadAllBinsTable()
-    loadBinsTable()
-    loadDashboardData()
-  }
+  const payload = new URLSearchParams()
+  payload.append('action', 'delete_bin')
+  payload.append('bin_id', binId)
+
+  fetch('bins.php', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: payload.toString()
+  })
+    .then(resp => resp.json())
+    .then(data => {
+      if (data && data.success) {
+        alert('Bin deleted successfully')
+        // Remove from local array
+        const index = bins.findIndex((b) => b.id === binId)
+        if (index > -1) {
+          bins.splice(index, 1)
+        }
+        // Reload tables and data
+        loadAllBinsTable()
+        loadBinsTable()
+        loadDashboardData()
+      } else {
+        alert('Failed to delete bin: ' + (data.message || 'Unknown error'))
+      }
+    })
+    .catch(err => {
+      console.error('Delete bin error:', err)
+      alert('Error deleting bin: ' + err.message)
+    })
 }
+
 
 function editJanitor(janitorId) {
   window.openEditJanitorModal(janitorId)

@@ -702,10 +702,11 @@ try {
       });
     }
   </script>
-  <!-- Janitor dashboard JS to provide header/footer modal handlers (logout, info modals, etc.) -->
-  <script src="js/janitor-dashboard.js"></script>
+  <!-- Logout is now handled by js/logout.js via header-admin.php (included via include_once)
+       Do NOT include janitor-dashboard.js here as it has conflicting logout modal handlers
+       Admin dashboard uses the unified logout flow: click → window.confirm() → api/logout.php -->
 
-  <!-- Fallback wiring: ensure notification bell and logout open the janitor modals and do not navigate -->
+  <!-- Fallback wiring: ensure notification bell works correctly -->
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       try {
@@ -722,20 +723,8 @@ try {
           });
         }
 
-        const logoutBtn = document.getElementById('logoutBtn');
-        if (logoutBtn) {
-          logoutBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (typeof showLogoutModal === 'function') {
-              showLogoutModal(e);
-            } else if (typeof showModalById === 'function') {
-              showModalById('logoutModal');
-            } else {
-              // fallback to navigate to logout if no modal available
-              window.location.href = 'logout.php';
-            }
-          });
-        }
+        // Logout is now handled exclusively by js/logout.js with .js-logout-action class
+        // Do NOT attach click handlers here as they conflict with the main logout handler
       } catch (err) {
         // swallow errors - these are non-critical fallback handlers
         console.warn('Admin header fallback handlers error', err);

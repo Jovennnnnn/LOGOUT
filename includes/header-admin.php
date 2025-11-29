@@ -148,13 +148,14 @@
     try {
       // Use a capturing delegated click listener to intercept clicks on header buttons
       // This ensures the confirmation modal is shown first and prevents other handlers
-        document.addEventListener('click', function(e) {
+      document.addEventListener('click', function(e) {
         const notifBtn = e.target.closest && e.target.closest('#notificationsBtn');
         const logoutBtn = e.target.closest && e.target.closest('#logoutBtn');
 
-        // If the logout element is our new action button, skip the legacy handler
+        // If the logout element is our new action button, skip ALL legacy handlers
+        // and let js/logout.js handle it exclusively
         if (logoutBtn && logoutBtn.classList && logoutBtn.classList.contains('js-logout-action')) {
-          return; // allow the .js-logout-action handler to run instead
+          return; // allow only the .js-logout-action handler from js/logout.js to run
         }
 
         if (notifBtn) {
@@ -173,21 +174,6 @@
             window.location.href = 'notifications.php';
             return;
           } catch(err) { console.warn('notifications handler failed', err); }
-        }
-
-        if (logoutBtn) {
-          e.preventDefault();
-          e.stopImmediatePropagation();
-          try {
-            if (typeof showLogoutModal === 'function') { showLogoutModal(e); return; }
-            if (typeof showModalById === 'function') { showModalById('logoutModal'); return; }
-            const modalEl = document.getElementById('logoutModal');
-            if (modalEl) { modalEl.classList.add('active'); document.body.style.overflow = 'hidden'; return; }
-            if (window.bootstrap && window.bootstrap.Modal) {
-              try { new window.bootstrap.Modal(document.getElementById('logoutModal')).show(); return; } catch(err) { console.warn('bootstrap logout show failed', err); }
-            }
-            window.location.href = 'logout.php';
-          } catch(err) { console.warn('logout handler failed', err); window.location.href = 'logout.php'; }
         }
       }, true /* capture */);
     } catch(err) { console.warn('Header modal wiring failed', err); }
@@ -210,32 +196,6 @@
       }
     } catch(e) { console.warn('Sidebar active fixer failed', e); }
 
-      // Ensure modal buttons inside #logoutModal are wired even if inline onclick fails
-      try {
-        const logoutModal = document.getElementById('logoutModal');
-        if (logoutModal) {
-          const btnCancel = logoutModal.querySelector('.btn-cancel');
-          const btnConfirm = logoutModal.querySelector('.btn-confirm');
-          if (btnCancel) {
-            btnCancel.addEventListener('click', function(e) {
-              e.preventDefault();
-              e.stopPropagation();
-              if (typeof closeLogoutModal === 'function') return closeLogoutModal();
-              // fallback: hide modal
-              logoutModal.classList.remove('active');
-              document.body.style.overflow = '';
-            });
-          }
-          if (btnConfirm) {
-            btnConfirm.addEventListener('click', function(e) {
-              e.preventDefault();
-              e.stopPropagation();
-              if (typeof confirmLogout === 'function') return confirmLogout();
-              // fallback: navigate to index
-              window.location.href = 'index.php';
-            });
-          }
-        }
-      } catch(err) { console.warn('Logout modal button wiring failed', err); }
+      // Legacy modal handlers removed - using js/logout.js with .js-logout-action class instead
   });
 </script>
