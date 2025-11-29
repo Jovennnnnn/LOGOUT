@@ -9,11 +9,8 @@ if (isAdmin()) {
     exit;
 }
 
-// If logged in as janitor, redirect to janitor dashboard (they shouldn't be here)
-if (isJanitor()) {
-    header('Location: janitor-dashboard.php');
-    exit;
-}
+// If logged in as janitor, let them stay here (they can see admin login form and choose to log out)
+// Do NOT redirect to janitor dashboard - that prevents viewing the admin login form
 ?>
 <!DOCTYPE html>
 <html lang="en">

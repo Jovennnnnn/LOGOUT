@@ -9,11 +9,8 @@ if (isJanitor()) {
     exit;
 }
 
-// If logged in as admin, redirect to admin dashboard (they shouldn't be here)
-if (isAdmin()) {
-    header('Location: admin-dashboard.php');
-    exit;
-}
+// If logged in as admin, let them stay here (they can see janitor login form and choose to log out)
+// Do NOT redirect to admin dashboard - that prevents viewing the janitor login form
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -190,7 +187,7 @@ if (isAdmin()) {
         const rememberMe = document.getElementById("remember").checked;
         
         try {
-          const response = await fetch("login-handler.php", { method: "POST", body: formData });
+          const response = await fetch("api/user-login.php", { method: "POST", body: formData });
           const data = await response.json();
           if (data.success) {
             // If remember me is checked, set cookie

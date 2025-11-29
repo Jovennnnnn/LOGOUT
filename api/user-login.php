@@ -1,8 +1,8 @@
 <?php
 /**
- * Standalone Admin Login Handler
- * Fetches password directly from admins table and verifies it.
- * Does NOT share code with janitor login.
+ * Standalone Janitor/User Login Handler
+ * Fetches password directly from janitors table and verifies it.
+ * Does NOT allow login if admin is already logged in (different role).
  */
 
 require_once __DIR__ . '/../includes/config.php';
@@ -18,9 +18,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-// Check if janitor is logged in - if so, reject admin login attempt
-if (isJanitor()) {
-    $response['message'] = 'You are currently logged in as Janitor. Please logout first to login as Admin.';
+// Check if admin is logged in - if so, reject janitor login attempt
+if (isAdmin()) {
+    $response['message'] = 'You are currently logged in as Admin. Please logout first to login as Janitor.';
     echo json_encode($response);
     exit;
 }
@@ -42,45 +42,45 @@ if ($password === '') {
 }
 
 try {
-    // Fetch admin from admins table ONLY
-    $admin = null;
+    // Fetch janitor from janitors table ONLY
+    $janitor = null;
     
     if (isset($pdo) && $pdo instanceof PDO) {
-        $stmt = $pdo->prepare("SELECT admin_id, first_name, last_name, email, password, status FROM admins WHERE email = ? LIMIT 1");
+        $stmt = $pdo->prepare("SELECT janitor_id, first_name, last_name, email, password, status FROM janitors WHERE email = ? LIMIT 1");
         $stmt->execute([$email]);
-        $admin = $stmt->fetch(PDO::FETCH_ASSOC);
+        $janitor = $stmt->fetch(PDO::FETCH_ASSOC);
     } else {
         if (!isset($conn)) throw new Exception('No DB connection');
-        $stmt = $conn->prepare("SELECT admin_id, first_name, last_name, email, password, status FROM admins WHERE email = ? LIMIT 1");
+        $stmt = $conn->prepare("SELECT janitor_id, first_name, last_name, email, password, status FROM janitors WHERE email = ? LIMIT 1");
         if (!$stmt) throw new Exception($conn->error ?: 'Prepare failed');
         $stmt->bind_param('s', $email);
         $stmt->execute();
         $res = $stmt->get_result();
-        $admin = $res ? $res->fetch_assoc() : null;
+        $janitor = $res ? $res->fetch_assoc() : null;
         $stmt->close();
     }
 
-    if (!$admin) {
-        error_log('[admin-login] No admin found with email: ' . $email);
+    if (!$janitor) {
+        error_log('[user-login] No janitor found with email: ' . $email);
         $response['message'] = 'Invalid email or password';
         echo json_encode($response);
         exit;
     }
 
     // Check if account is active
-    if ($admin['status'] !== 'active') {
-        error_log('[admin-login] Admin ' . $admin['admin_id'] . ' is not active: ' . $admin['status']);
+    if ($janitor['status'] !== 'active') {
+        error_log('[user-login] Janitor ' . $janitor['janitor_id'] . ' is not active: ' . $janitor['status']);
         $response['message'] = 'Account is not active';
         echo json_encode($response);
         exit;
     }
 
     // Verify password
-    $stored_hash = $admin['password'] ?? '';
+    $stored_hash = $janitor['password'] ?? '';
     $verified = false;
 
     if ($stored_hash === '') {
-        error_log('[admin-login] Admin ' . $admin['admin_id'] . ' has no password hash');
+        error_log('[user-login] Janitor ' . $janitor['janitor_id'] . ' has no password hash');
         $response['message'] = 'Invalid email or password';
         echo json_encode($response);
         exit;
@@ -89,33 +89,33 @@ try {
     // Try password_verify first (for bcrypt/argon2 hashes)
     if (password_verify($password, $stored_hash)) {
         $verified = true;
-        error_log('[admin-login] Admin ' . $admin['admin_id'] . ' login successful (password_verify)');
+        error_log('[user-login] Janitor ' . $janitor['janitor_id'] . ' login successful (password_verify)');
     }
     // Try SHA-256 (64 hex characters)
     elseif (strlen($stored_hash) === 64 && preg_match('/^[a-f0-9]{64}$/i', $stored_hash)) {
         $computed_sha256 = hash('sha256', $password);
         if ($computed_sha256 === $stored_hash) {
             $verified = true;
-            error_log('[admin-login] Admin ' . $admin['admin_id'] . ' login successful (sha256)');
+            error_log('[user-login] Janitor ' . $janitor['janitor_id'] . ' login successful (sha256)');
             
             // Rehash with password_hash for better security
             try {
                 $new_hash = password_hash($password, PASSWORD_DEFAULT);
                 if (isset($pdo) && $pdo instanceof PDO) {
-                    $update_stmt = $pdo->prepare("UPDATE admins SET password = ? WHERE admin_id = ?");
-                    $update_stmt->execute([$new_hash, $admin['admin_id']]);
+                    $update_stmt = $pdo->prepare("UPDATE janitors SET password = ? WHERE janitor_id = ?");
+                    $update_stmt->execute([$new_hash, $janitor['janitor_id']]);
                 } else {
                     if (isset($conn)) {
-                        $update_stmt = $conn->prepare("UPDATE admins SET password = ? WHERE admin_id = ?");
+                        $update_stmt = $conn->prepare("UPDATE janitors SET password = ? WHERE janitor_id = ?");
                         if ($update_stmt) {
-                            $update_stmt->bind_param('si', $new_hash, $admin['admin_id']);
+                            $update_stmt->bind_param('si', $new_hash, $janitor['janitor_id']);
                             $update_stmt->execute();
                             $update_stmt->close();
                         }
                     }
                 }
             } catch (Exception $e) {
-                error_log('[admin-login] Failed to rehash password: ' . $e->getMessage());
+                error_log('[user-login] Failed to rehash password: ' . $e->getMessage());
             }
         }
     }
@@ -123,32 +123,32 @@ try {
     elseif (strlen($stored_hash) === 32 && preg_match('/^[a-f0-9]{32}$/i', $stored_hash)) {
         if (md5($password) === $stored_hash) {
             $verified = true;
-            error_log('[admin-login] Admin ' . $admin['admin_id'] . ' login successful (md5)');
+            error_log('[user-login] Janitor ' . $janitor['janitor_id'] . ' login successful (md5)');
             
             // Rehash with password_hash for security
             try {
                 $new_hash = password_hash($password, PASSWORD_DEFAULT);
                 if (isset($pdo) && $pdo instanceof PDO) {
-                    $update_stmt = $pdo->prepare("UPDATE admins SET password = ? WHERE admin_id = ?");
-                    $update_stmt->execute([$new_hash, $admin['admin_id']]);
+                    $update_stmt = $pdo->prepare("UPDATE janitors SET password = ? WHERE janitor_id = ?");
+                    $update_stmt->execute([$new_hash, $janitor['janitor_id']]);
                 } else {
                     if (isset($conn)) {
-                        $update_stmt = $conn->prepare("UPDATE admins SET password = ? WHERE admin_id = ?");
+                        $update_stmt = $conn->prepare("UPDATE janitors SET password = ? WHERE janitor_id = ?");
                         if ($update_stmt) {
-                            $update_stmt->bind_param('si', $new_hash, $admin['admin_id']);
+                            $update_stmt->bind_param('si', $new_hash, $janitor['janitor_id']);
                             $update_stmt->execute();
                             $update_stmt->close();
                         }
                     }
                 }
             } catch (Exception $e) {
-                error_log('[admin-login] Failed to rehash password: ' . $e->getMessage());
+                error_log('[user-login] Failed to rehash password: ' . $e->getMessage());
             }
         }
     }
 
     if (!$verified) {
-        error_log('[admin-login] Admin ' . $admin['admin_id'] . ' failed password verification');
+        error_log('[user-login] Janitor ' . $janitor['janitor_id'] . ' failed password verification');
         $response['message'] = 'Invalid email or password';
         echo json_encode($response);
         exit;
@@ -160,29 +160,29 @@ try {
     }
     session_regenerate_id(true);
 
-    $_SESSION['admin_id'] = $admin['admin_id'];
-    $_SESSION['role'] = 'admin';
-    $_SESSION['name'] = trim(($admin['first_name'] ?? '') . ' ' . ($admin['last_name'] ?? ''));
+    $_SESSION['janitor_id'] = $janitor['janitor_id'];
+    $_SESSION['role'] = 'janitor';
+    $_SESSION['name'] = trim(($janitor['first_name'] ?? '') . ' ' . ($janitor['last_name'] ?? ''));
 
     // Create persistent auth session (store in auth_sessions table)
     try {
         require_once __DIR__ . '/../includes/session-manager.php';
-        $authToken = createAuthSession('admin', $admin['admin_id'], $pdo);
+        $authToken = createAuthSession('janitor', $janitor['janitor_id'], $pdo);
         if ($authToken) {
             setcookie('auth_token', $authToken, time() + (30 * 24 * 60 * 60), '/', '', true, true);
         }
     } catch (Exception $e) {
-        error_log('[admin-login] Failed to create persistent session: ' . $e->getMessage());
+        error_log('[user-login] Failed to create persistent session: ' . $e->getMessage());
     }
 
     $response['success'] = true;
-    $response['message'] = 'Welcome Back, Admin';
-    $response['redirect'] = 'admin-dashboard.php';
+    $response['message'] = 'Welcome Back!';
+    $response['redirect'] = 'janitor-dashboard.php';
 
-    error_log('[admin-login] Admin ' . $admin['admin_id'] . ' session created');
+    error_log('[user-login] Janitor ' . $janitor['janitor_id'] . ' session created');
 
 } catch (Exception $e) {
-    error_log('[admin-login] Exception: ' . $e->getMessage());
+    error_log('[user-login] Exception: ' . $e->getMessage());
     $response['message'] = 'Server error: ' . $e->getMessage();
 }
 
