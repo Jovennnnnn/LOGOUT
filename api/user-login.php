@@ -18,8 +18,17 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+<<<<<<< HEAD
 // Note: Do not block janitor login if an admin session exists in another tab/browser.
 // Allow creating a new janitor session; the auth_token cookie will be set for this login.
+=======
+// Check if admin is logged in - if so, reject janitor login attempt
+if (isAdmin()) {
+    $response['message'] = 'You are currently logged in as Admin. Please logout first to login as Janitor.';
+    echo json_encode($response);
+    exit;
+}
+>>>>>>> 5288bc0fdf6561e476d691bb1b43bf5a1a95d3e2
 
 $email = isset($_POST['email']) ? trim($_POST['email']) : '';
 $password = isset($_POST['password']) ? trim($_POST['password']) : '';
